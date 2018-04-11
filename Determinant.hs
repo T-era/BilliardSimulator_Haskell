@@ -1,14 +1,17 @@
 module Determinant(SqrDet(SqrDet), LinDet, absSD, rev, cross) where
 
+-- SqrDet:: 2行2列の行列式
 data SqrDet t = SqrDet (t, t) (t, t)
+-- SqrDet:: ベクトル
 type LinDet t = (t,t)
 
 instance (Num t) => Num (SqrDet t) where
     (+) (SqrDet (a,b) (c,d)) (SqrDet (e,f) (g,h)) = SqrDet (a+e,b+f) (c+g,d+h)
     (*) (SqrDet (a,b) (c,d)) (SqrDet (e,f) (g,h)) = SqrDet (a*e+b*g,a*f+b*h) (c*e+d*g,c*f+d*h)
-    fromInteger n = SqrDet (fromInteger n,0) (0,fromInteger    n)
+    fromInteger n = SqrDet (fromInteger n,0) (0,fromInteger n)
     abs s = SqrDet (absSD s,0) (0,absSD s)
     signum s = SqrDet (signum$absSD s,0) (0,signum$absSD s)
+    negate (SqrDet (a,b) (c,d)) = SqrDet (-a, -b) (-c,-d)
 
 absSD :: (Num t) => SqrDet t -> t
 absSD (SqrDet (a, b) (c, d)) = a * d - b * c

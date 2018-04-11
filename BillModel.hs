@@ -1,4 +1,4 @@
-module BillModel(Shot, Ball, Cond(Cond), chain, tick, move, ballSize, width, height) where
+module BillModel(Shot, Ball, Cond(Cond), tick, move, ballSize, width, height) where
 
 import Determinant
 import Reflecter
@@ -10,48 +10,26 @@ data Cond d = Cond d [Shot d] deriving Show
 data HitSnapShot d = HitSnapShot { ball1::Shot d, ball2::Shot d, dTime::d }
             | HitWithWall { reflectVertical::Bool, ballId::Int, dTime::d }
             | NotHit
-            deriving Show
+            deriving (Show, Eq)
+
+instance (Eq d, Ord d) => Ord (HitSnapShot d) where
+    compare NotHit NotHit = EQ
+    compare NotHit _ = GT
+    compare _ NotHit = LT
+    compare a b = compare (dTime a) (dTime b)
 
 ballSize = 25
 width = 800
 height = 400
 
-nTimes :: a -> (a -> a) -> Int -> a
-nTimes x _ 0 = x
-nTimes start f n = nTimes (f start) f (n-1)
-
-chain :: (Ord d, Floating d) => Cond d -> Cond d
-chain (Cond timestamp shots) = Cond timeNext (when shots)
-    where
-        timeNext = timeOf firstHit
-        timeOf NotHit = timestamp -- TODO how can??
-        timeOf h      = timestamp + dTime h
-        firstHit = foldr first NotHit allHits
-        first :: (Ord d, Floating d) => HitSnapShot d -> HitSnapShot d -> HitSnapShot d
-        first a NotHit = a
-        first NotHit a = a
-        first a b
-            | (dTime b) < (dTime a) = b
-            | otherwise             = a
-        allHits = (concat$map (\s1 -> map (\s2 -> makeHit s1 s2) shots) shots) ++ (map wallHits shots)
-        when shots = hitAction$map (move (timeNext - timestamp)) shots -- TODO
-        hitAction = map (reflectOrNot firstHit)
-
+-- 指定時間分シミュレートを進めます
 tick :: (Ord d, Floating d) => d -> Cond d -> Cond d
 tick dt (Cond timestamp shots)
     | dt < timeNext = Cond (timestamp + dt) (map (move dt) shots)
     | otherwise     = tick (dt - timeNext) (Cond (timestamp + timeNext) (when shots))
     where
-        timeNext = timeOf firstHit
---        timeOf NotHit = timestamp -- TODO how can??
-        timeOf h      = dTime h
-        firstHit = foldr first NotHit allHits
-        first :: (Ord d, Floating d) => HitSnapShot d -> HitSnapShot d -> HitSnapShot d
-        first a NotHit = a
-        first NotHit a = a
-        first a b
-            | (dTime b) < (dTime a) = b
-            | otherwise             = a
+        timeNext = dTime firstHit
+        firstHit = foldr min NotHit allHits
         allHits = (concat$map (\s1 -> map (\s2 -> makeHit s1 s2) shots) shots) ++ (map wallHits shots)
         when shots = hitAction$map (move timeNext) shots -- TODO
         hitAction = map (reflectOrNot firstHit)
@@ -61,12 +39,8 @@ reflectOrNot NotHit = id
 reflectOrNot (HitWithWall vertical id1 _) = (\s -> reflect s)
     where
         reflect s@(ball@(_,_,idx), (dx, dy))
-            | idx == id1 = (ball, (newMotion))
+            | idx == id1 = (ball, (if vertical then (-dx, dy) else (dx, -dy)))
             | otherwise  = s
-            where
-                newMotion
-                    | vertical  = (-dx, dy)
-                    | otherwise = (dx, -dy)
 
 reflectOrNot (HitSnapShot shot1@((x1,y1,id1),(dx1,dy1)) shot2@((x2,y2,id2),(dx2,dy2)) _) = (\s -> reflect s)
     where
