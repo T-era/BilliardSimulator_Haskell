@@ -22,23 +22,23 @@ inWindow = do
 interval = 20
 ballSize' = realToFrac ballSize
 ballS3 = sqrt 3 * ballSize'
-width' = realToFrac width
-height' = realToFrac height
+width' = realToFrac tableWidth
+height' = realToFrac tableHeight
 
 startPos :: [Shot GLfloat]
-startPos = [((-width'/2, - height' * 0.8, 0),(width' / 100, height' * 0.8 / 100))
-        , stopped (width'/2,000,1)
-        , stopped (width'/2+ballS3,-ballSize',5)
-        , stopped (width'/2+ballS3, ballSize',6)
-        , stopped (width'/2+ballS3*2,-ballSize'*2,3)
-        , stopped (width'/2+ballS3*2,           0,9)
-        , stopped (width'/2+ballS3*2, ballSize'*2,4)
-        , stopped (width'/2+ballS3*3,-ballSize',7)
-        , stopped (width'/2+ballS3*3, ballSize',8)
-        , stopped (width'/2+ballS3*4,0,2)]
+startPos = [(Ball (-width'/2, - height' * 0.8) 0,(width' / 100, height' * 0.8 / 100))
+        , stopped (Ball (width'/2,000) 1)
+        , stopped (Ball (width'/2+ballS3,-ballSize') 5)
+        , stopped (Ball (width'/2+ballS3, ballSize') 6)
+        , stopped (Ball (width'/2+ballS3*2,-ballSize'*2) 3)
+        , stopped (Ball (width'/2+ballS3*2,           0) 9)
+        , stopped (Ball (width'/2+ballS3*2, ballSize'*2) 4)
+        , stopped (Ball (width'/2+ballS3*3,-ballSize') 7)
+        , stopped (Ball (width'/2+ballS3*3, ballSize') 8)
+        , stopped (Ball (width'/2+ballS3*4,0) 2)]
 
 stopped :: Ball GLfloat -> Shot GLfloat
-stopped (x,y,id) = ((realToFrac x, realToFrac y, id), (0,0))
+stopped (Ball (x,y) id) = (Ball (realToFrac x, realToFrac y) id, (0,0))
 
 first = Cond 0 startPos
 showWindow :: IO() -> IO()
@@ -46,7 +46,7 @@ showWindow addition = do
     cond <- newIORef first
 
     --colorMaterial $= Just (FrontAndBack, AmbientAndDiffuse)
-    initialWindowSize $= Size (fromIntegral width) (fromIntegral height)
+    initialWindowSize $= Size (fromIntegral tableWidth) (fromIntegral tableHeight)
     createWindow "Billiard"
     addition
 
@@ -77,19 +77,19 @@ fullscreenResizeEvent (Size w h) = do
         where
             rate = min w (h * 2)
             size@(Size w' h') = Size rate (div rate 2)
-            pos = Position 1 (div (h' - fromIntegral height) 2)
+            pos = Position 1 (div (h' - fromIntegral tableHeight) 2)
 
 drawBalls :: [Ball GLfloat] -> IO()
 drawBalls = mapM_ drawBall
 drawBall :: Ball GLfloat -> IO()
-drawBall size@(x, y, i) = do
+drawBall (Ball (x, y) i) = do
     fillCircle (x, y) ballSize' 64 (colorBack i)
     when (i > 8) (fillStripe (x, y) ballSize' 64 (colorStrp i))
     when (i > 0) (drawLabel (Vector3 x y 0) (show i))
 
 drawLabel :: Vector3 GLfloat -> String -> IO()
 drawLabel pos@(Vector3 x y _) i = do
-    lineWidth $= 1.0
+    lineWidth $= 1
     fillCircle (x+(ballSize' / 4), y+(ballSize' / 4)) (ballSize' / 2) 32 white
     preservingMatrix $ do
         translate pos
