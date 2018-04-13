@@ -1,6 +1,6 @@
 module Reflecter(
     DividedMotion(DividedMotion, my, others),
-    Positional(toPos, divide),
+    Positional(toPos, divide, reflect),
     (+++), (-+-)) where
 
 import Determinant
@@ -23,19 +23,15 @@ class Positional p where
           (a,b) = cross revSqr motion
           mOthers = (a*(x2-x1),a*(y2-y1))
           mMy = (b*(y2-y1),b*(x1-x2))
-
-type Moving pos d = (pos d, Motion d)
-data CO pos d = CO { a :: Moving pos d, b :: Moving pos d} deriving Show
-
-reflect :: (Num d, Fractional d, Positional p) => CO p d -> CO p d
-reflect (CO (pn1, m1) (pn2, m2)) = CO v1 v2
-  where
-    (p1, f1) = toPos pn1
-    (p2, f2) = toPos pn2
-    DividedMotion m11 m21 = divide pn1 pn2 m1
-    DividedMotion m12 m22 = divide pn1 pn2 m2
-    v1 = (f1 p1, m11 +++ m22)
-    v2 = (f2 p2, m21 +++ m12)
+  reflect :: (Num d, Fractional d) => ((p d, Motion d), (p d, Motion d)) -> ((p d, Motion d), (p d, Motion d))
+  reflect ((pn1, m1), (pn2, m2)) = (v1, v2)
+      where
+        (p1, f1) = toPos pn1
+        (p2, f2) = toPos pn2
+        DividedMotion m11 m21 = divide pn1 pn2 m1
+        DividedMotion m12 m22 = divide pn1 pn2 m2
+        v1 = (f1 p1, m11 +++ m22)
+        v2 = (f2 p2, m21 +++ m12)
 
 (x1, y1) +++ (x2, y2) = (x1 + x2, y1 + y2)
 

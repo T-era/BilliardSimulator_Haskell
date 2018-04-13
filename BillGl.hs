@@ -40,10 +40,9 @@ startPos = [(Ball (-width'/2, - height' * 0.8) 0,(width' / 100, height' * 0.8 / 
 stopped :: Ball GLfloat -> Shot GLfloat
 stopped (Ball (x,y) id) = (Ball (realToFrac x, realToFrac y) id, (0,0))
 
-first = Cond 0 startPos
 showWindow :: IO() -> IO()
 showWindow addition = do
-    cond <- newIORef first
+    cond <- newIORef startPos
 
     --colorMaterial $= Just (FrontAndBack, AmbientAndDiffuse)
     initialWindowSize $= Size (fromIntegral tableWidth) (fromIntegral tableHeight)
@@ -65,7 +64,7 @@ step cond = do
     flush
     swapBuffers
 
-display (Cond _ balls) = do
+display balls = do
     clear [ColorBuffer]
     clearTable
     mapM_ drawBall (map (\(pos, _) -> pos) balls)
