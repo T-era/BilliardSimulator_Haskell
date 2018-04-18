@@ -1,17 +1,18 @@
 module Reflecter(
     DividedMotion(DividedMotion, my, others),
     Positional(toPos, divide, reflect),
+    Pos, Motion,
     (+++), (-+-)) where
 
 import Determinant
 
 type Motion d = (d, d)
-type Position d = (d, d)
+type Pos d = (d, d)
 
 data DividedMotion d = DividedMotion { my :: Motion d, others :: Motion d } deriving Show
 
 class Positional p where
-  toPos :: p d -> (Position d, Position d -> p d)
+  toPos :: p d -> (Pos d, Pos d -> p d)
   divide :: (Num d, Fractional d) => p d -> p d -> Motion d -> DividedMotion d
   divide p1 p2 motion@(dx,dy) = DividedMotion mMy mOthers
       where

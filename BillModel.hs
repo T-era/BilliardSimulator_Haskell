@@ -1,12 +1,10 @@
-module BillModel(Shot, Ball(Ball), tick, move, ballSize, tableWidth, tableHeight) where
+module BillModel(Shot, Ball(Ball), tick, ballSize, tableWidth, tableHeight) where
 
 import Determinant
 import Reflecter
 import ListUtils
 
-type Pos d = (d, d)
 data Ball d = Ball { pos :: Pos d, num :: Int } deriving (Show)
-type Motion d = (d, d)
 type Shot d = (Ball d, Motion d)
 type Condition d = [Shot d]
 data Hit d = Hit { dTime::d, apply::(Condition d -> Condition d)}
@@ -22,6 +20,7 @@ instance (Eq d) => Eq (Hit d) where
     a == b = (dTime a) == (dTime b)
 instance (Show d) => Show (Hit d) where
     show (Hit a _) = show a
+
 minHit :: (Ord d) => HitOrNot d -> HitOrNot d -> HitOrNot d
 minHit Nothing Nothing = Nothing
 minHit a Nothing = a
@@ -37,8 +36,8 @@ tableHeight = 400
 -- 指定時間分シミュレートを進めます
 tick :: (Ord d, Floating d) => d -> Condition d -> Condition d
 tick dt shots
-    | dt < timeNext         = map (move dt) shots
-    | firstOrNot == Nothing = map (move dt) shots
+    | dt < timeNext         = moveAll dt shots
+    | firstOrNot == Nothing = moveAll dt shots
     | otherwise             = tick (dt - timeNext) (when shots)
     where
         timeNext = dTime firstHit
@@ -47,13 +46,17 @@ tick dt shots
         allHits = ballsHit ++ wallHit
         ballsHit = map makeBallsHit (matching shots)
         wallHit = map wallHits shots
-        when shots = hitAction$map (move timeNext) shots
+        when shots = hitAction$moveAll timeNext shots
         hitAction = apply firstHit
+
+-- (衝突がない時間帯のために)指定時間、直線運動を続けます
+moveAll :: (Floating d) => d -> Condition d -> Condition d
+moveAll time = map (move time)
 
 move :: (Floating d) => d -> Shot d -> Shot d
 move t (Ball (x, y) id, (dx, dy)) = (Ball nextPos id, (dx, dy))
     where
-      nextPos = (x + dx*t, y + dy*t)
+        nextPos = (x + dx*t, y + dy*t)
 
 reflectWall :: (Num d) => Bool -> (Shot d -> Shot d)
 reflectWall vertical (ball, (dx, dy))
@@ -68,11 +71,11 @@ indexFromNum n l = _findNum l 0
             | otherwise = _findNum ls (temp + 1)
 
 applyAt num f l = prev ++ (f item:suff)
-  where
-    index = indexFromNum num l
-    prev = take (index) l
-    item = l !! index
-    suff = drop (index + 1) l
+    where
+        index = indexFromNum num l
+        prev = take (index) l
+        item = l !! index
+        suff = drop (index + 1) l
 
 wallHits :: (Ord d, Floating d) => Shot d -> HitOrNot d
 wallHits s@(Ball (x, y) ballId, (dx, dy)) = earlier
